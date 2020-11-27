@@ -4,6 +4,7 @@ import net.logstash.logback.argument.StructuredArguments.v
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
+import org.aspectj.lang.reflect.CodeSignature
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.*
@@ -21,11 +22,33 @@ class LogResultAspect {
 
         proceed.set(joinPoint.proceed())
 
+        var arguments = (joinPoint.signature as CodeSignature).parameterNames
+                .asSequence()
+                .zip(joinPoint.args.asSequence())
+                .filter {
+                    logResult.structuredArgumentGeneral.asSequence().any { l -> l.field == it.first }
+                }
+                .toList()
+
+
+        logResult.structuredArgumentGeneral
+                .asSequence()
+                .map { parameter ->
+                    Pair(parameter.key,
+                            arguments.find { a -> a.first == parameter.field }
+                                    ?.let {
+                                        it.second::class.memberProperties
+                                                .find { it.name == parameter.key }?.getter?.call(it.second).toString()
+                                    }
+                    )
+                }
+
 
         // get the data from the method argument for failure logging
 
+
         when (val result = proceed.get()) {
-            is Optional<*> -> result.ifPresentOrElse({ payload -> logger.debug(logResult.value, *logResult.parameter, *getStructuredArguments(logResult, payload)) }, Runnable { logger.warn(logResult.value) })
+            is Optional<*> -> result.ifPresentOrElse({ payload -> logger.debug(logResult.value, *logResult.logMessageParameter, *getStructuredArguments(logResult, payload)) }, Runnable { logger.warn(logResult.value) })
             is Collection<*> -> if (result.isNotEmpty()) logger.debug(logResult.value, result.size) else logger.warn(logResult.value)
             else -> logger.debug(logResult.value, result)
         }
@@ -35,13 +58,15 @@ class LogResultAspect {
 
     private fun getStructuredArguments(logResult: LogResult, payload: Any): Array<Any> {
         return arrayOf(
-                logResult.structuredParameterFromPayload
-                .asSequence()
-                .map { p -> v(p.key, payload::class.memberProperties
-                        .find { it.name == p.value }?.getter?.call(payload) ?: "" ) }
-                .toList()
-                .toTypedArray(),
-                logResult.structuredParameter
+                logResult.structuredParameterForResult
+                        .asSequence()
+                        .map { p ->
+                            v(p.key, payload::class.memberProperties
+                                    .find { it.name == p.value }?.getter?.call(payload).toString())
+                        }
+                        .toList()
+                        .toTypedArray(),
+                logResult.structuredParameterGeneral
                         .asSequence()
                         .map { p -> v(p.key, p.value) }
                         .toList()
