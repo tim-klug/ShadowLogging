@@ -22,7 +22,7 @@ class LogResultAspect {
 
         proceed.set(joinPoint.proceed())
 
-        var arguments = (joinPoint.signature as CodeSignature).parameterNames
+        val arguments = (joinPoint.signature as CodeSignature).parameterNames
                 .asSequence()
                 .zip(joinPoint.args.asSequence())
                 .filter {
@@ -31,18 +31,29 @@ class LogResultAspect {
                 .toList()
 
 
-        logResult.structuredArgumentGeneral
-                .asSequence()
-                .map { parameter ->
-                    Pair(parameter.key,
-                            arguments.find { a -> a.first == parameter.field }
-                                    ?.let {
-                                        it.second::class.memberProperties
-                                                .find { it.name == parameter.key }?.getter?.call(it.second).toString()
-                                    }
-                    )
-                }
+        val loggingArguments = arrayOf(
+                logResult.structuredArgumentGeneral
+                        .asSequence()
+                        .map { parameter ->
+                            Pair(parameter.key,
+                                    arguments.find { a -> a.first == parameter.field }
+                                            ?.let {
+                                                it.second::class.memberProperties
+                                                        .find { it.name == parameter.field }?.getter?.call(it.second).toString()
+                                            }
+                            )
+                        }
+                        .map { v(it.first, it.second) }
+                        .toList()
+                        .toTypedArray(),
+                logResult.structuredParameterGeneral
+                        .asSequence()
+                        .map { p -> v(p.key, p.value) }
+                        .toList()
+                        .toTypedArray()
+        )
 
+        logger.debug(logResult.value, *logResult.logMessageParameter, *loggingArguments)
 
         // get the data from the method argument for failure logging
 
