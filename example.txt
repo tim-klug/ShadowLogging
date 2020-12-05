@@ -1,0 +1,52 @@
+
+- Error Code
+- class name
+- maybe id
+- maybe tenant
+
+- logLevel
+
+onFailure
+onSuccess
+
+
+LOG.error("Isas can not be found",
+          v(MonitoringConstants.OBJECT_NAME.getName(), isasControl.getClass().getName()),
+          v(MonitoringConstants.OBJECT_REFERENCE.getName(), isasControl.getEntityId()),
+          v(MonitoringConstants.TENANT.getName(), isasControl.getTenant()),
+          v(MonitoringConstants.ERROR_CODE.getName(), ErrorCode.REMOVE_REMITTANCE_ADVICE.getCode())
+
+@ShadowLog(
+    ShadowLogSuccess(
+        message = "",
+        logLevel = LogLevel.Debug,
+        ShadowLogValues = {
+            ShadowLogV("", ""),
+            ShadowLogV("", ""),
+            ShadowLogV("", "")
+        }
+    ),
+    ShadowLogFailure(
+        message = "",
+        logLevel = LogLevel.Error,
+        values = {
+            "",
+            "",
+            ""
+        }
+    )
+)
+
+@ShadowLogId
+@ShadowLogItem(keyName)
+
+function
+
+in ->
+
+level
+message
+
+for each -> marked item from argument and result
+
+out

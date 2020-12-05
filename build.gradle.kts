@@ -7,7 +7,7 @@ plugins {
 	kotlin("plugin.spring") version "1.4.10"
 }
 
-group = "com.example"
+group = "com.theothertim"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
 
@@ -21,6 +21,9 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.aspectj:aspectjtools:1.9.6")
 	implementation("net.logstash.logback:logstash-logback-encoder:6.4")
+	implementation("ch.qos.logback:logback-classic:1.2.3")
+	implementation("ch.qos.logback:logback-core:1.2.3")
+//	implementation("org.slf4j:slf4j-api:1.7.30")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
