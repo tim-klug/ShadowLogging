@@ -22,4 +22,9 @@ class TestCases {
     fun logFieldsFromPayload(payload: TestPayload): String {
         return payload.name
     }
+
+    @ShadowLog(success = ShadowLogEntry("Success"), failure = ShadowLogEntry("Failure"))
+    fun logFieldsFromMultiplePayload(payload: TestPayload, otherPayload: String): String {
+        return payload.name
+    }
 }

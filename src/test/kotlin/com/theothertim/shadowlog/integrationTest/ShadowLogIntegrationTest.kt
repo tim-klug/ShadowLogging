@@ -54,4 +54,15 @@ class ShadowLogIntegrationTest {
         val logsList = listAppender.list
         assertThat(logsList).isNotEmpty
     }
+
+    @Test
+    fun `log fields from argument with multiple payload`() {
+        val payload = TestPayload()
+        payload.name = "Test Demo"
+
+        sut.logFieldsFromMultiplePayload(payload, "Something")
+
+        val logsList = listAppender.list
+        assertThat(logsList).isNotEmpty
+    }
 }
