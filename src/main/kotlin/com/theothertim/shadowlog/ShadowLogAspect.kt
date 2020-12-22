@@ -3,11 +3,9 @@ package com.theothertim.shadowlog
 import net.logstash.logback.argument.StructuredArgument
 import net.logstash.logback.argument.StructuredArguments.kv
 import net.logstash.logback.argument.StructuredArguments.v
-import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
-import org.aspectj.lang.reflect.CodeSignature
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.*
@@ -17,6 +15,8 @@ import java.util.*
 public class ShadowLogAspect {
 
     private val proceed = ThreadLocal.withInitial<Any> { Object() }
+    private final val logItem = ShadowLogItem::class.java
+    private final val logId = ShadowLogId::class.java
 
     @Around(value = "@within(shadowLog) || @annotation(shadowLog)")
     public fun log(joinPoint: ProceedingJoinPoint, shadowLog: ShadowLog): Any {
@@ -53,27 +53,34 @@ public class ShadowLogAspect {
     }
 
     private fun getAllStructuredArguments(joinPoint: ProceedingJoinPoint): Array<StructuredArgument> =
-            (joinPoint.signature as CodeSignature).parameterTypes
-                .asSequence()
-                .zip(joinPoint.args.asSequence())
-                .filter { it.first.isAnnotationPresent(ShadowLogItem::class.java) || it.first.isAnnotationPresent(ShadowLogId::class.java) }
-                .map { if (it.first.annotations.contains(ShadowLogId::class.java))
-                    v("reference", it.second.toString())
-                else
-                    v(((it.first as Class).getAnnotation(ShadowLogItem::class.java) as ShadowLogItem).value, it.second.toString())
-                }
-                .toList()
-                .toTypedArray()
+                joinPoint.args.asSequence()
+                    .filter { it.javaClass.declaredFields.any { field ->  field.isAnnotationPresent(logItem) || field.isAnnotationPresent(logId) } }
+                    .map {
+                        it.javaClass.declaredFields
+                                .filter { field ->  field.isAnnotationPresent(logItem) || field.isAnnotationPresent(logId) }
+                                .onEach { field -> field.trySetAccessible()}
+                                .map { field ->
+                            when {
+                                field.isAnnotationPresent(logId) -> v("reference", field.get(it).toString())
+                                field.isAnnotationPresent(logItem) -> (field.annotations.find { annotation -> annotation is ShadowLogItem } as ShadowLogItem).value.let { value -> if (value.isNotEmpty()) v(value, field.get(it).toString()) else v(field.name, field.get(it).toString()) }
+                                else -> v(field.name, field.get(field).toString())
+                            }
+                        }
+                    }
+                    .toList()
+                    .flatten()
+                    .toTypedArray()
 
     private fun getAllStructuredArguments(obj: Any): Array<StructuredArgument> =
-        obj.javaClass
-                .declaredFields
-                .filter { it.isAnnotationPresent(ShadowLogItem::class.java) || it.isAnnotationPresent(ShadowLogId::class.java) }
-                .map { if (it.annotations.contains(ShadowLogId::class.java))
-                    v("reference", it.toString())
-                else
-                    v(it.name, it.toString())
-                }
-                .toList()
-                .toTypedArray()
+            obj.javaClass
+                    .declaredFields
+                    .filter { it.isAnnotationPresent(logItem) || it.isAnnotationPresent(logId) }
+                    .map {
+                        if (it.annotations.contains(logId))
+                            v("reference", it.toString())
+                        else
+                            v(it.name, it.toString())
+                    }
+                    .toList()
+                    .toTypedArray()
 }

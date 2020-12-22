@@ -6,6 +6,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import com.theothertim.shadowlog.ShadowLog
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -41,5 +42,16 @@ class ShadowLogIntegrationTest {
         val logsList = listAppender.list
 
         Assertions.assertThat(logsList).hasSize(1)
+    }
+
+    @Test
+    fun `log fields from argument payload`() {
+        val payload = TestPayload()
+        payload.name = "Test Demo"
+
+        sut.logFieldsFromPayload(payload)
+
+        val logsList = listAppender.list
+        assertThat(logsList).isNotEmpty
     }
 }

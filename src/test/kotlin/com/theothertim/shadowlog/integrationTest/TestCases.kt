@@ -17,4 +17,9 @@ class TestCases {
     fun testFunction1(item: String): String {
         return "test"
     }
+
+    @ShadowLog(success = ShadowLogEntry("Success"), failure = ShadowLogEntry("Failure"))
+    fun logFieldsFromPayload(payload: TestPayload): String {
+        return payload.name
+    }
 }

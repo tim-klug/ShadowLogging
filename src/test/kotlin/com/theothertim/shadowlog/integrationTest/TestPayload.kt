@@ -7,12 +7,14 @@ import java.util.*
 
 class TestPayload {
 
-    @ShadowLogId
-    val id: UUID = UUID.randomUUID()
+    @field:ShadowLogId
+    var id: UUID = UUID.randomUUID()
 
-    @ShadowLogItem
-    val name: String = ""
+    @field:ShadowLogItem
+    var name: String = ""
 
-    @ShadowLogItem("tenant")
-    val tenantReference: UUID = UUID.randomUUID()
+    @field:ShadowLogItem("tenant")
+    var tenantReference: UUID = UUID.randomUUID()
+
+    var ignoredField: String = "ignore me"
 }
